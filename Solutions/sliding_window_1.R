@@ -2,7 +2,7 @@ library(rmr2)
 library(tm)
 library(topicmodels)
 
-rmr.options(backend="hadoop")
+rmr.options(backend="local")
 
 time_extractor = function(tweet) {
   floor(unclass(as.POSIXct(
@@ -18,15 +18,17 @@ tweet_mapper = function(null,tweet_text) {
 }
 
 topics_reducer = function(time,tweets){
-  print(time)
-  window_corpus=Corpus(VectorSource(tweets))
-  window_matrix=DocumentTermMatrix(window_corpus)
-  topic_model=LDA(window_matrix,2) #adjust the number of topics here
-  keyval(time, topic_model)
+    tryCatch({
+      window_corpus=Corpus(VectorSource(tweets))
+      window_matrix=DocumentTermMatrix(window_corpus)
+      topic_model=LDA(window_matrix,3) #adjust the number of topics here
+      keyval(time, c(topic_model))
+    }, error= function(e){return()})
 }
 
-tweet_timeframes = from.dfs(mapreduce("~/Data/small_sample_twitter_data",
+tweet_timeframes = from.dfs(mapreduce("~/Data/sample_twitter_data",
                                       input.format="text",
                                       map=tweet_mapper,
-                                      #reduce=topics_reducer
+                                      reduce=topics_reducer
                                      ))
+str(tweet_timeframes)
