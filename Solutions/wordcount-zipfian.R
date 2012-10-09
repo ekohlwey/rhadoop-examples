@@ -1,4 +1,4 @@
-library(rmr2)
+library(rmr)
 library(hash)
 
 # sample the data using the "look at the first few
@@ -29,10 +29,10 @@ is_high_frequency = hash(keys=high_freq_words, values=rep(T,length(high_freq_wor
 # now we want to break the task up by the degree of parallelism in our cluster
 num_slots = 10
 
-rmr.options(backend="local")
+rmr.options.set(backend="local")
 
-partitioned_wordcount_map = function(nulls,lines){ 
-  words = unlist(lapply(lines, strsplit, split="\\s+", perl=T))
+partitioned_wordcount_map = function(null,line){ 
+  words = unlist(strsplit(line, split="\\s+", perl=T))
   words = words[nzchar(words)]
   high_freq_part=floor(runif(1)*num_slots)
   partiton_assigner = function(word) {
@@ -41,8 +41,8 @@ partitioned_wordcount_map = function(nulls,lines){
     else
       c(part=0, word=word)
   }
-  words = sapply(words, partiton_assigner)
-  keyval(words, rep(1, length(words)))
+  partitioned_words = lapply(words, partiton_assigner)
+  lapply(partitioned_words, function(word)keyval(word,1))
 }
 partitioned_wordcount_combine = function(word_and_parts, counts){
   keyval(word_and_parts, sum(unlist(counts)))
@@ -54,16 +54,18 @@ wordcount_reduce = function(words, counts){
   keyval(words, sum(unlist(counts)))
 }
 
-phase_1_counts = mapreduce("~/foo-file",
+phase_1_counts = mapreduce("~/Data/federalist_papers",
       input.format="text",
       map=partitioned_wordcount_map, 
-#       reduce = partitioned_wordcount_reduce,
-#       combine = partitioned_wordcount_combine
+      reduce = partitioned_wordcount_reduce,
+      combine = partitioned_wordcount_combine
   )
-counts = from.dfs(phase_1_counts)
-# counts = from.dfs(mapreduce(phase_1_counts,
-#                 reduce=wordcount_reduce))
+result = from.dfs(mapreduce(phase_1_counts,
+                reduce=wordcount_reduce))
 
-orders = order(counts$val, decreasing=T)[1:50]
-barplot(counts$val[orders], names.arg=counts$key[orders] )
+counts = unlist(lapply(result, function(kv) kv$val))
+words = unlist(lapply(result, function(kv) kv$key))
+orders = order(counts,decreasing=T)[1:50]
+
+barplot(counts[orders], names.arg=words[orders] )
 
