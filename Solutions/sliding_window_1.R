@@ -37,5 +37,5 @@ tweet_timeframes = from.dfs(mapreduce("~/Data/sample_twitter_data",
                                       reduce=topics_reducer
                                      ))
 
-terms = lapply(tweet_timeframes, function(kv) terms(kv["val"]))
-frequencies = lapply(tweet_timeframes, function(kv) posterior(kv["val"]))
+terms = lapply(tweet_timeframes, function(kv) terms(kv$val))
+frequencies = lapply(tweet_timeframes, function(kv) posterior(kv$val))
