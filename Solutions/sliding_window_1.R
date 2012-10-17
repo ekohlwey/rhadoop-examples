@@ -28,7 +28,6 @@ topics_reducer = function(time,tweets){
                # control = list(removePunctuation=T, stopwords=T))
     topic_model=LDA(window_matrix,3) #adjust the number of topics here
     ret = keyval(time, topic_model)
-    print (ret)
     return(ret)
 }
 
