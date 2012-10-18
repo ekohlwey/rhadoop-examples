@@ -34,11 +34,14 @@ tweet_mapper = function(null,tweet_text) {
 error_func= function(e) print(e)
 
 topics_reducer = function(time,tweets){
-  # create a corpus using the functions Corpus() and VectorSource()
-  # create a document term matrix using DocumentTermMatrix()
-  # create a topic model with 3 topics using LDA()
-  # return a keyval using the time as the key and topic model
-  # as the value
+  tryCatch({
+    window_corpus=Corpus(VectorSource(tweets))
+    window_matrix=DocumentTermMatrix(window_corpus, )
+               # control = list(removePunctuation=T, stopwords=T))
+    topic_model=LDA(window_matrix,3) #adjust the number of topics here
+    ret = keyval(time, topic_model)
+    return(ret)
+  }, error = function(e) print(tweets))
 }
 
 tweet_timeframes = from.dfs(mapreduce("~/Data/small_sample_twitter_data",

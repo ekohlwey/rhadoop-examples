@@ -3,10 +3,12 @@ library(hash)
 
 # sample the data using the "look at the first few
 # lines" method
-# use the file() function, readChar function, and strsplit
-# function to break the words up.
-# then use R's tapply function to find the word counts
-
+sample_input = file("~/Data/federalist_papers")
+word_sample = readChar(sample_input,10000)
+close(sample_input)
+words = unlist(strsplit(word_sample,"\\s+",perl=T))
+words = data.frame(words=words, count=rep(1, length(words)))
+word_count_samples = tapply(words$count, words$words, sum)
 
 hist_order=order(unlist(word_count_samples), decreasing=T)
 word_histogram = data.frame(freq=unlist(unname(word_count_samples))[hist_order],
@@ -15,8 +17,8 @@ word_histogram = data.frame(freq=unlist(unname(word_count_samples))[hist_order],
 # estimate of the "tail" threshold is about 5.
 barplot(word_histogram$freq, names.arg=word_histogram$word)
 # now that you know the threshold, set up a hash to test for it.
-# use the > operator to find the high frequency words
-# then save them in a hash, using the constant T as the value
+high_freq_words = word_histogram$word[word_histogram$freq>5]
+is_high_frequency = hash(keys=high_freq_words, values=rep(T,length(high_freq_words)))
 
 
 # now we want to break the task up by the degree of parallelism in our cluster
@@ -28,24 +30,23 @@ partitioned_wordcount_map = function(null,line){
   words = unlist(strsplit(line, split="\\s+", perl=T))
   words = words[nzchar(words)]
   high_freq_part=floor(runif(1)*num_slots)
-  # create a partition assigner function that 
-  # checks if it's input is in the high frequency map
-  # using the is.null function. If it isn't,
-  # assign it to the partition 0. Otherwise, assign it to
-  # the partition high_freq_part. Do so by
-  # concatenating the word and the partition number
-  # using the c function
+  partiton_assigner = function(word) {
+    if(!is.null(is_high_frequency[[word]])) 
+      c(high_freq_part,word=word)
+    else
+      c(part=0, word=word)
+  }
   partitioned_words = lapply(words, partiton_assigner)
   lapply(partitioned_words, function(word)keyval(word,1))
 }
 partitioned_wordcount_combine = function(word_and_parts, counts){
-  # sum the counts, but don't strip off the partition number
+  keyval(word_and_parts, sum(unlist(counts)))
 }
 partitioned_wordcount_reduce = function(word_and_parts, counts){
-  # sum the counts, strip off the partition number
+  keyval(word_and_parts["word"], sum(unlist(counts)))
 }
 wordcount_reduce = function(words, counts){
-  # sum the counts again
+  keyval(words, sum(unlist(counts)))
 }
 
 phase_1_counts = mapreduce("~/Data/federalist_papers",
