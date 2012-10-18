@@ -43,7 +43,7 @@ product_reducer = function(out_index, is_and_values){
   is = unlist(lapply(is_and_values, function(ival) ival$i))
   vals = unlist(lapply(is_and_values, function(ival) ival$val))
   sorted_is = order(is)
-  product = even_elements(vals[sorted_is]) * odd_elements(vals[sorted_is])
+  product = even_elements(vals) * odd_elements(vals)
   keyval(out_index["row"], list(col=out_index["col"], val=sum(product)))
 }
 
@@ -59,3 +59,8 @@ left_intermediate = mapreduce("~/Data/A.csv", map = left_mapper, input.format=si
 right_intermediate = mapreduce("~/Data/B.csv", map = right_mapper, input.format=simple_csv_in)
 merged_intermediate = mapreduce(list(left_intermediate, right_intermediate), reduce=product_reducer)
 final_rows = mapreduce(merged_intermediate, reduce=to_row_reducer)
+
+final_matrix = lapply(from.dfs(final_rows), function(kv)kv$val)
+final_matrix = matrix(unlist(final_matrix),nrow=n, ncol=p+1, byrow=T)
+final_matrix = final_matrix[order(final_matrix[,1]),2:ncol(final_matrix)]
+final_matrix
