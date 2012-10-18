@@ -7,16 +7,11 @@ sample_input = file("~/Data/federalist_papers")
 word_sample = readChar(sample_input,10000)
 close(sample_input)
 words = unlist(strsplit(word_sample,"\\s+",perl=T))
-word_count_samples = list()
-for(word in words){
-  if(is.null(word_count_samples[[word]])){
-    word_count_samples[[word]] = 1
-  } else {
-    word_count_samples[[word]] = word_count_samples[[word]]+1
-  }
-}
+words = data.frame(words=words, count=rep(1, length(words)))
+word_count_samples = tapply(words$count, words$words, sum)
+
 hist_order=order(unlist(word_count_samples), decreasing=T)
-word_histogram = data.frame(freq=unlist(word_count_samples)[hist_order],
+word_histogram = data.frame(freq=unlist(unname(word_count_samples))[hist_order],
                             word=names(word_count_samples)[hist_order])
 # this barplot will let you see quite clearly that a good
 # estimate of the "tail" threshold is about 5.
