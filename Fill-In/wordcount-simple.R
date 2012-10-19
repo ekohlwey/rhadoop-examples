@@ -2,12 +2,18 @@ library(rmr)
 rmr.options.set(backend="local")
 
 wordcount_mapper = function(null,line) {
-  split_words = unlist(strsplit(line, split="\\s+", perl=TRUE))
-  lapply(split_words, function(word) keyval(word,1))
+  # use the strsplit function to break the words on the
+  # newline character
+  # you will need to unlist the results of the strsplit
+  # function
+  # use lapply to turn the split words into key value
+  # pairs, using the word as the key and 1 as the value
 }
 
 wordcount_reducer = function(word,occurrences) {
-  keyval(word, sum(unlist(occurrences)))
+  # use the sum, unlist, and keyval functions
+  # to return a keyval with the word as the key and
+  # the sum of the list # of occurrences as the value
 }
 
 results = mapreduce("~/Data/federalist_papers", input.format="text",
