@@ -56,4 +56,4 @@ topics = lapply(tweet_timeframes, function(kv){
   topics[1:n_results]
 })
 
-terms
+print(terms)
